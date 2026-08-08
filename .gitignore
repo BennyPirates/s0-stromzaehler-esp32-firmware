@@ -1,0 +1,15 @@
+.pio/
+.pio-venv/
+.platformio-core/
+.vscode/
+.DS_Store
+
+# Local-only Wi-Fi and OTA credentials.
+include/secrets.h
+
+# Generated firmware and reports.
+*.bin
+*.elf
+*.hex
+*.map
+reports/
