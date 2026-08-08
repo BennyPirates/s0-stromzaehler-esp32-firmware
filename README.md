@@ -45,11 +45,14 @@ Keep credentials in the ignored local file `include/secrets.h`:
 
 ```text
 cp include/secrets.example.h include/secrets.h
+cp platformio.local.ini.example platformio.local.ini
 ```
 
-Edit that file with the Wi-Fi SSID, Wi-Fi password, and a strong OTA password.
-It is intentionally ignored and must never be committed. If `secrets.h` is
-absent, the firmware still builds but reports that Wi-Fi is disabled.
+Edit `include/secrets.h` with the Wi-Fi SSID, Wi-Fi password, and a strong OTA
+password. Put the same OTA password in `platformio.local.ini` after
+`--auth=`. Both files are intentionally ignored and must never be committed.
+If `secrets.h` is absent, the firmware still builds but reports that Wi-Fi is
+disabled.
 
 ## First USB flash
 

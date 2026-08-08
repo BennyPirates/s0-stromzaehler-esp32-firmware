@@ -6,6 +6,7 @@
 
 # Local-only Wi-Fi and OTA credentials.
 include/secrets.h
+platformio.local.ini
 
 # Generated firmware and reports.
 *.bin
