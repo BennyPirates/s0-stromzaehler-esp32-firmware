@@ -1,4 +1,6 @@
-[env:esp32dev]
+[env:esp32ota]
+extends = esp32dev
+upload_protocol = espota
 ; Copy this file to platformio.local.ini and use the same value as OTA_PASSWORD
 ; in include/secrets.h. This file is ignored by Git.
 upload_flags =

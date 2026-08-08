@@ -75,7 +75,7 @@ After the first successful USB flash and Wi-Fi connection, update over the
 network using either the mDNS hostname or the resolved IP address:
 
 ```text
-pio run -t upload --upload-port s0-stromzaehler-esp32.local
+pio run -e esp32ota -t upload --upload-port s0-stromzaehler-esp32.local
 ```
 
 PlatformIO will use the ArduinoOTA protocol. The local OTA password is read
