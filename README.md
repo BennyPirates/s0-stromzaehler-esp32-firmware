@@ -125,6 +125,10 @@ Then add **S0 Stromzähler ESP32** in *Settings → Devices & services* and ente
 the ESP32 hostname (or its local IP address) and HTTP port. This connection
 data is stored only in Home Assistant's config entry, never in Git.
 
+For this private repository, the GitHub account connected to HACS must have
+access to the repository; otherwise GitHub intentionally returns a 404 response
+to HACS. Do not make the repository public merely to install the integration.
+
 The integration polls `/api/status` every 10 seconds and creates six sensors:
 
 - Wärmepumpe, Ferienwohnung, Hauptwohnung: current power in W
