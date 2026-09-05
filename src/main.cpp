@@ -55,6 +55,67 @@ String jsonEscape(const String& value) {
   return escaped;
 }
 
+String uint64ToString(uint64_t value) {
+  char buffer[21] = {};
+  snprintf(buffer, sizeof(buffer), "%llu", static_cast<unsigned long long>(value));
+  return String(buffer);
+}
+
+bool parseEnergyWh(const String& value, uint64_t& energyWh) {
+  if (value.isEmpty()) {
+    return false;
+  }
+
+  uint64_t parsed = 0;
+  for (const char character : value) {
+    if (character < '0' || character > '9') {
+      return false;
+    }
+    const uint8_t digit = static_cast<uint8_t>(character - '0');
+    if (parsed > (UINT64_MAX - digit) / 10ULL) {
+      return false;
+    }
+    parsed = parsed * 10ULL + digit;
+  }
+  energyWh = parsed;
+  return true;
+}
+
+bool requireMeterWriteAuthentication() {
+  if (OTA_PASSWORD[0] == '\0') {
+    server.send(503, "application/json", "{\"error\":\"meter_write_auth_not_configured\"}");
+    return false;
+  }
+  if (!server.authenticate("admin", OTA_PASSWORD)) {
+    server.requestAuthentication(BASIC_AUTH, "S0 meter write access");
+    return false;
+  }
+  return true;
+}
+
+void handleMeterReadingWrite(uint8_t channel) {
+  if (!requireMeterWriteAuthentication()) {
+    return;
+  }
+
+  uint64_t energyWh = 0;
+  if (!server.hasArg("energy_wh") || !parseEnergyWh(server.arg("energy_wh"), energyWh)) {
+    server.send(400, "application/json", "{\"error\":\"energy_wh_must_be_an_unsigned_integer\"}");
+    return;
+  }
+  if (!optocouplerInputs.setMeterEnergyWh(channel, energyWh)) {
+    server.send(503, "application/json", "{\"error\":\"meter_storage_unavailable\"}");
+    return;
+  }
+
+  const S0InputSnapshot input = optocouplerInputs.snapshot(channel);
+  String body = "{\"channel\":" + String(channel + 1) + ",\"name\":\"" +
+                jsonEscape(input.name) + "\",\"energy_wh\":" +
+                uint64ToString(input.meterEnergyWh) + ",\"energy_kwh\":" +
+                String(static_cast<double>(input.meterEnergyWh) / 1000.0, 3) + "}";
+  server.send(200, "application/json", body);
+}
+
 String ipAddress() {
   return WiFi.status() == WL_CONNECTED ? WiFi.localIP().toString() : "0.0.0.0";
 }
@@ -82,6 +143,33 @@ String statusJson() {
   body += "\"ip_address\":\"" + ipAddress() + "\",";
   body += "\"rssi\":";
   body += connected ? String(WiFi.RSSI()) : "null";
+  body += ",\"s0_inputs\":{\"active_low\":";
+  body += OptocouplerInputs::kActiveLow ? "true" : "false";
+  body += ",\"debounce_ms\":" + String(OptocouplerInputs::kDebounceUs / 1000UL);
+  body += ",\"channels\":[";
+  for (uint8_t channel = 0; channel < OptocouplerInputs::kChannelCount; ++channel) {
+    const S0InputSnapshot input = optocouplerInputs.snapshot(channel);
+    if (channel > 0) {
+      body += ",";
+    }
+    body += "{\"channel\":" + String(channel + 1);
+    body += ",\"name\":\"" + jsonEscape(input.name) + "\"";
+    body += ",\"gpio\":" + String(input.gpio);
+    body += ",\"raw_level\":\"" + String(input.rawLevelHigh ? "high" : "low") + "\"";
+    body += ",\"active\":" + String(input.active ? "true" : "false");
+    body += ",\"rising_edges\":" + String(input.risingEdges);
+    body += ",\"falling_edges\":" + String(input.fallingEdges);
+    body += ",\"pulses\":" + String(input.pulses);
+    body += ",\"energy_wh\":" + uint64ToString(input.meterEnergyWh);
+    body += ",\"energy_kwh\":" + String(static_cast<double>(input.meterEnergyWh) / 1000.0, 3);
+    body += ",\"power_w\":" + String(input.estimatedPowerW);
+    body += ",\"last_pulse_interval_ms\":";
+    body += input.hasPowerEstimate ? String(input.lastPulseIntervalMs) : "null";
+    body += ",\"last_pulse_age_ms\":";
+    body += input.hasPulse ? String(input.lastPulseAgeMs) : "null";
+    body += "}";
+  }
+  body += "]}";
   body += "}";
   return body;
 }
@@ -101,7 +189,19 @@ String statusPage() {
   page += "<tr><td>IP address</td><td>" + ipAddress() + "</td></tr>";
   page += "<tr><td>RSSI</td><td>";
   page += WiFi.status() == WL_CONNECTED ? String(WiFi.RSSI()) + " dBm" : "n/a";
-  page += R"HTML(</td></tr></table><p>JSON: <a href="/api/status">/api/status</a></p></body></html>)HTML";
+  page += "</td></tr></table><h2>S0 input diagnostics</h2><p>GPIO INPUT_PULLUP; active-low; debounce " +
+          String(OptocouplerInputs::kDebounceUs / 1000UL) + " ms.</p>";
+  page += "<table><tr><td>Meter</td><td>GPIO</td><td>State</td><td>Power</td><td>Energy</td><td>Edges (r/f)</td></tr>";
+  for (uint8_t channel = 0; channel < OptocouplerInputs::kChannelCount; ++channel) {
+    const S0InputSnapshot input = optocouplerInputs.snapshot(channel);
+    page += "<tr><td>" + String(input.name) + "</td><td>" + String(input.gpio) + "</td><td>" +
+            (input.active ? "active (low)" : "inactive (high)") + "</td><td>" +
+            String(input.estimatedPowerW) + " W</td><td>" +
+            String(static_cast<double>(input.meterEnergyWh) / 1000.0, 3) + " kWh (" +
+            String(input.pulses) + " pulses)</td><td>" + String(input.risingEdges) + " / " +
+            String(input.fallingEdges) + "</td></tr>";
+  }
+  page += R"HTML(</table><p>JSON: <a href="/api/status">/api/status</a></p></body></html>)HTML";
   return page;
 }
 
@@ -110,6 +210,9 @@ void startNetworkServices() {
     server.on("/", HTTP_GET, []() { server.send(200, "text/html", statusPage()); });
     server.on("/api/status", HTTP_GET,
               []() { server.send(200, "application/json", statusJson()); });
+    server.on("/api/meters/1/reading", HTTP_POST, []() { handleMeterReadingWrite(0); });
+    server.on("/api/meters/2/reading", HTTP_POST, []() { handleMeterReadingWrite(1); });
+    server.on("/api/meters/3/reading", HTTP_POST, []() { handleMeterReadingWrite(2); });
     server.onNotFound([]() { server.send(404, "text/plain", "Not found\n"); });
     server.begin();
     serverStarted = true;
@@ -158,7 +261,7 @@ void beginWifiAttempt() {
     return;
   }
 
-  Serial.printf("[WIFI] Connecting to '%s'\n", WIFI_SSID);
+  Serial.println("[WIFI] Connecting with local credentials");
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   nextWifiAttempt = millis() + wifiRetryInterval;
   wifiRetryInterval = min(wifiRetryInterval * 2U, WIFI_RETRY_INTERVAL_MAX_MS);

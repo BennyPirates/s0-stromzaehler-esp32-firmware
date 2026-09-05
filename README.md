@@ -1,9 +1,9 @@
 # S0 Stromzähler ESP32 firmware
 
-Base firmware for an ESP32-WROOM-32 development board that will eventually read
-S0 pulses from an electricity meter through an optocoupler board. The S0 input
-and optocoupler wiring are deliberately not implemented in this milestone. The
-firmware only exercises the ESP32, Wi-Fi, HTTP status page, and OTA update path.
+Diagnostic firmware for an ESP32-WROOM-32 development board reading three S0
+pulse inputs through a PC817 optocoupler board. It is deliberately limited to
+input verification: it has no Home Assistant integration and does not control
+or alter any meter-side wiring.
 
 ## Features
 
@@ -13,24 +13,37 @@ firmware only exercises the ESP32, Wi-Fi, HTTP status page, and OTA update path.
 - mDNS hostname `s0-stromzaehler-esp32.local` when the local network supports mDNS
 - ArduinoOTA updates, optionally protected by a local OTA password
 - Serial logging at 115200 baud for boot, Wi-Fi, HTTP, mDNS, and OTA events
-- An explicit, inactive `OptocouplerInputs` boundary for the next milestone
+- Interrupt-based diagnostics for the three S0 inputs
+- HTTP and serial display of raw input state, accepted edges, pulse counts,
+  estimated current power, and accumulated diagnostic energy
+- Persistent meter readings stored as small integer values in ESP32 NVS
 
 ## Hardware status
 
-Verified so far:
+Configured diagnostic wiring:
 
-- ESP32-WROOM-32 development board: reported as available, but USB identity
-  and exact board variant still require a connected-device check.
-- Four-channel optocoupler board, DIN-rail supply: reported as available;
-  no pins are configured and no electrical connection is assumed.
-- No electricity-meter or mains-side wiring is part of this firmware.
+- PC817 U1 to ESP32 GPIO25: Wärmepumpe S0 input
+- PC817 U2 to ESP32 GPIO33: Ferienwohnung S0 input
+- PC817 U3 to ESP32 GPIO27: Hauptwohnung S0 input
+- All three GPIOs use `INPUT_PULLUP`; PC817 outputs are active-low.
+- Meter mapping: GPIO25 is Wärmepumpe, GPIO33 is Ferienwohnung, and GPIO27
+  is Hauptwohnung.
+- S0 resolution is 1000 impulses/kWh, therefore one accepted pulse is 1 Wh or
+  0.001 kWh. Current power is estimated from the gap between the two newest
+  accepted pulses (`1 pulse/minute = 60 W`).
 
-Still to verify:
+The active-low polarity is intentionally a named firmware configuration
+(`OptocouplerInputs::kActiveLow`) rather than an implicit assumption. Verify
+that idle state is `inactive (high)` and a meter pulse becomes `active (low)`.
+The 10 ms debounce filters optocoupler/wiring transitions; it is not a
+measurement or energy-accounting feature.
+
+Still to verify before adding any integration:
 
 - USB-to-serial chip, serial device path, flash size, and exact ESP32 module
 - Stable 5 V/3.3 V power arrangement for the selected development board
-- S0 pulse interface polarity, pulse voltage/current, isolation, and GPIO
-  mapping before any input code is added
+- Each meter produces one accepted falling edge and pulse count increment per
+  physical S0 pulse.
 
 ## Local setup
 
@@ -85,8 +98,20 @@ use the device IP address shown in the serial log or status page.
 ## Verification endpoints
 
 - `GET /` — human-readable status page
-- `GET /api/status` — machine-readable JSON containing hostname, firmware
-  version, uptime, Wi-Fi state, IP address, and RSSI
+- `GET /api/status` — machine-readable JSON containing network state plus an
+  `s0_inputs` object for all channels (name, raw level, active state, edges,
+  raw pulses, Wh, kWh, estimated current W, and last pulse timing)
+- `POST /api/meters/<1|2|3>/reading` — sets a meter reading in whole Wh. This
+  endpoint requires HTTP Basic authentication with username `admin` and the
+  existing local OTA password. The request body is form data:
+  `energy_wh=<whole-number>`.
+
+Meter readings are persisted as small key-value entries in ESP32 NVS rather
+than in a database. NVS is appropriate for these three values and has built-in
+wear levelling. The firmware saves automatically after 1 kWh of change or at
+least every six hours when a value has changed; a manually set value is saved
+immediately. Raw `pulses` remain a diagnostic count since boot, while
+`energy_wh` and `energy_kwh` are the persisted meter readings.
 
 The firmware keeps its main loop running while Wi-Fi is unavailable. It does
 not block waiting for a connection and retries in the background with a
@@ -95,6 +120,5 @@ bounded backoff.
 ## Development notes
 
 The initial PlatformIO target is `esp32dev`, the generic target appropriate
-for an ESP32-WROOM-32 development board. Once the connected board is inspected,
-the board setting should be changed only if the verified USB/flash hardware
-requires it. No S0 pulse counting or electricity-meter operation is present.
+for an ESP32-WROOM-32 development board. Pulse counters reset on firmware
+restart and remain diagnostic only; the meter readings are persistent.
