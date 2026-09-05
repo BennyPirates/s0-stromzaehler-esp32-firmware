@@ -57,7 +57,7 @@ class OptocouplerInputs {
   mutable portMUX_TYPE mutex_ = portMUX_INITIALIZER_UNLOCKED;
   ChannelState channels_[kChannelCount] = {
       {"Wärmepumpe", 25, true, 0, 0, 0, 0, 0, 0, 0},
-      {"Ferienwohnung", 33, true, 0, 0, 0, 0, 0, 0, 0},
+      {"FeWo", 33, true, 0, 0, 0, 0, 0, 0, 0},
       {"Hauptwohnung", 27, true, 0, 0, 0, 0, 0, 0, 0},
   };
   uint32_t lastReportedPulses_[kChannelCount] = {};

@@ -22,10 +22,10 @@ board. The firmware does not control or alter any meter-side wiring.
 Configured diagnostic wiring:
 
 - PC817 U1 to ESP32 GPIO25: Wärmepumpe S0 input
-- PC817 U2 to ESP32 GPIO33: Ferienwohnung S0 input
+- PC817 U2 to ESP32 GPIO33: FeWo S0 input
 - PC817 U3 to ESP32 GPIO27: Hauptwohnung S0 input
 - All three GPIOs use `INPUT_PULLUP`; PC817 outputs are active-low.
-- Meter mapping: GPIO25 is Wärmepumpe, GPIO33 is Ferienwohnung, and GPIO27
+- Meter mapping: GPIO25 is Wärmepumpe, GPIO33 is FeWo, and GPIO27
   is Hauptwohnung.
 - S0 resolution is 1000 impulses/kWh, therefore one accepted pulse is 1 Wh or
   0.001 kWh. Current power is estimated from the gap between the two newest
@@ -129,8 +129,8 @@ only in Home Assistant's config entry, never in Git.
 
 The integration polls `/api/status` every 10 seconds and creates six sensors:
 
-- Wärmepumpe, Ferienwohnung, Hauptwohnung: current power in W
-- Wärmepumpe, Ferienwohnung, Hauptwohnung: accumulated energy in kWh
+- Wärmepumpe, FeWo, Hauptwohnung: current power in W
+- Wärmepumpe, FeWo, Hauptwohnung: accumulated energy in kWh
 
 Power sensors use the `measurement` state class. Energy sensors use the
 `energy` device class and `total` state class, making them suitable for the

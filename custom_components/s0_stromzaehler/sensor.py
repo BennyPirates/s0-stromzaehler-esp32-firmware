@@ -44,12 +44,12 @@ SENSORS = (
         unit=UnitOfEnergy.KILO_WATT_HOUR,
     ),
     S0SensorDescription(
-        key="fewo_power", name="Ferienwohnung Leistung", channel=2, value_key="power_w",
+        key="fewo_power", name="FeWo Leistung", channel=2, value_key="power_w",
         device_class=SensorDeviceClass.POWER, state_class=SensorStateClass.MEASUREMENT,
         unit=UnitOfPower.WATT,
     ),
     S0SensorDescription(
-        key="fewo_energy", name="Ferienwohnung Energie", channel=2, value_key="energy_kwh",
+        key="fewo_energy", name="FeWo Energie", channel=2, value_key="energy_kwh",
         device_class=SensorDeviceClass.ENERGY, state_class=SensorStateClass.TOTAL,
         unit=UnitOfEnergy.KILO_WATT_HOUR,
     ),

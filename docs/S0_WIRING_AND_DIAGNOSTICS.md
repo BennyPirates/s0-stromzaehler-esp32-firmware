@@ -25,7 +25,7 @@ terminal is `G`.
 | Channel | HY-M154 output `U` wire | ESP32 GPIO | HY-M154 output `G` wire |
 | --- | --- | --- | --- |
 | 1 — Wärmepumpe | green | GPIO25 | black |
-| 2 — Ferienwohnung | yellow | GPIO33 | white |
+| 2 — FeWo | yellow | GPIO33 | white |
 | 3 — Hauptwohnung | orange | GPIO27 | grey |
 
 - `U1`, `U2`, and `U3` go to GPIO25, GPIO33, and GPIO27 respectively.
@@ -90,13 +90,13 @@ the mains input side does not connect the two isolated DC outputs.
 - PC817 channels 1–3 blink individually and synchronously with their matching
   meter's S0 pulse indication.
 - The three S0 inputs are now electrically independent.
-- Meter mapping: Wärmepumpe → IN1/U1/GPIO25, Ferienwohnung →
+- Meter mapping: Wärmepumpe → IN1/U1/GPIO25, FeWo →
   IN2/U2/GPIO33, Hauptwohnung → IN3/U3/GPIO27.
 
 ## OTA verification status
 
 GPIO26 was found to be held at 0 V even with the U2 signal wire disconnected.
-It is no longer used. Ferienwohnung now uses GPIO33; its U2 signal wire must
+It is no longer used. FeWo now uses GPIO33; its U2 signal wire must
 be moved from D26 to D33 while G2 remains connected to ESP GND.
 
 GPIO33 is therefore **not yet verified**. Before committing, check its
@@ -106,7 +106,7 @@ channel independently:
   (yellow) and G2 (white) wiring.
 - PC817 channel 2 LED permanently on: inspect only its left-side S0 input loop.
 - A healthy idle state reports GPIO33 as `high` and inactive; a pulse briefly
-  changes it to low and increments only Ferienwohnung's counter.
+  changes it to low and increments only FeWo's counter.
 
 ## Next-session checklist
 
@@ -115,7 +115,7 @@ channel independently:
    inactive.
 3. Produce a known load on one meter at a time. Only that channel's PC817 LED,
    edge counters, and pulse counter should react.
-4. Resolve and verify GPIO33 / Ferienwohnung independently before considering
+4. Resolve and verify GPIO33 / FeWo independently before considering
    a Home Assistant integration.
 5. Only after successful hardware verification: review the Git diff, commit,
    and push. Do not commit local configuration, credentials, device addresses,
