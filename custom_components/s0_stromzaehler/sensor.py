@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorEntityDescription,
+    SensorStateClass,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfEnergy, UnitOfPower
 from homeassistant.core import HomeAssistant
@@ -15,7 +20,7 @@ from .entity import S0MeterEntity
 
 
 @dataclass(frozen=True, kw_only=True)
-class S0SensorDescription:
+class S0SensorDescription(SensorEntityDescription):
     """Describe one sensor reading from the ESP32 JSON payload."""
 
     key: str
