@@ -1,9 +1,8 @@
 # S0 Stromzähler ESP32 firmware
 
-Diagnostic firmware for an ESP32-WROOM-32 development board reading three S0
-pulse inputs through a PC817 optocoupler board. It is deliberately limited to
-input verification: it has no Home Assistant integration and does not control
-or alter any meter-side wiring.
+Firmware and Home Assistant custom integration for an ESP32-WROOM-32
+development board reading three S0 pulse inputs through a PC817 optocoupler
+board. The firmware does not control or alter any meter-side wiring.
 
 ## Features
 
@@ -116,6 +115,26 @@ immediately. Raw `pulses` remain a diagnostic count since boot, while
 The firmware keeps its main loop running while Wi-Fi is unavailable. It does
 not block waiting for a connection and retries in the background with a
 bounded backoff.
+
+## Home Assistant
+
+The repository contains the custom integration in
+`custom_components/s0_stromzaehler`. Install the repository as a custom
+**Integration** repository in HACS, download it, and restart Home Assistant.
+Then add **S0 Stromzähler ESP32** in *Settings → Devices & services* and enter
+the ESP32 hostname (or its local IP address) and HTTP port. This connection
+data is stored only in Home Assistant's config entry, never in Git.
+
+The integration polls `/api/status` every 10 seconds and creates six sensors:
+
+- Wärmepumpe, Ferienwohnung, Hauptwohnung: current power in W
+- Wärmepumpe, Ferienwohnung, Hauptwohnung: accumulated energy in kWh
+
+Power sensors use the `measurement` state class. Energy sensors use the
+`energy` device class and `total` state class, making them suitable for the
+Home Assistant Energy Dashboard and long-term statistics. Before adding the
+energy sensors, set each real mechanical meter reading with the authenticated
+ESP API so the first imported value is correct.
 
 ## Development notes
 

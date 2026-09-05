@@ -1,6 +1,7 @@
 .pio/
 .pio-venv/
 .venv/
+__pycache__/
 .platformio-core/
 .vscode/
 .DS_Store

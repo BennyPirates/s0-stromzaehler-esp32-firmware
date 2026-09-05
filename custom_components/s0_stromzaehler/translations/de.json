@@ -1,0 +1,18 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "S0 Stromzähler ESP32 einrichten",
+        "description": "Gib den lokalen Hostnamen oder die IP-Adresse des ESP32 an.",
+        "data": {
+          "host": "Host",
+          "port": "Port"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "ESP32-Status kann nicht gelesen werden.",
+      "unknown": "Unerwarteter Fehler"
+    }
+  }
+}

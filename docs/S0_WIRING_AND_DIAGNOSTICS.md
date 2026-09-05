@@ -11,7 +11,8 @@ readings.
 - The HTTP status endpoint reports the raw state, accepted rising/falling edges,
   and pulse counter of all three channels.
 - Capture is interrupt-based with a 10 ms debounce period.
-- This is diagnostics only: no Home Assistant integration is included.
+- The repository includes a Home Assistant custom integration that exposes the
+  three live-power and three energy readings.
 - Meter readings can be read from the status endpoint and set through an
   authenticated local API. They are saved in ESP32 NVS, not in a database.
 
