@@ -119,15 +119,14 @@ bounded backoff.
 ## Home Assistant
 
 The repository contains the custom integration in
-`custom_components/s0_stromzaehler`. Install the repository as a custom
-**Integration** repository in HACS, download it, and restart Home Assistant.
-Then add **S0 Stromzähler ESP32** in *Settings → Devices & services* and enter
-the ESP32 hostname (or its local IP address) and HTTP port. This connection
-data is stored only in Home Assistant's config entry, never in Git.
-
-For this private repository, the GitHub account connected to HACS must have
-access to the repository; otherwise GitHub intentionally returns a 404 response
-to HACS. Do not make the repository public merely to install the integration.
+`custom_components/s0_stromzaehler`. HACS supports only public GitHub
+repositories, so this private repository must be installed by copying that
+directory to Home Assistant's
+`/config/custom_components/s0_stromzaehler/` directory. Restart Home Assistant
+after copying it. Then add **S0 Stromzähler ESP32** in *Settings → Devices &
+services* and enter the ESP32 hostname (or its local IP address) and HTTP port.
+This connection data is stored only in Home Assistant's config entry, never in
+Git.
 
 The integration polls `/api/status` every 10 seconds and creates six sensors:
 
